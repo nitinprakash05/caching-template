@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+ xmlns:http="http://www.mulesoft.org/schema/mule/http"
+ xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+ <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="d78784e0-bc08-441d-aa3c-948440d1cd0e" >
+  <http:request-connection protocol="HTTPS" />
+ </http:request-config>
+
+<!-- Object store defined for the caching Strategy -->
+
+ <os:object-store name="Object_store" 
+ doc:name="Object store"
+ doc:id="44d219cd-706d-4ad5-b6a1-4152c183fcaf"
+ entryTtl="2"
+ entryTtlUnit="MINUTES"
+ expirationInterval="3" />
+
+<!-- Caching Strategy Defination -->
+
+ <ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="fa98f224-763b-4b6f-84ba-31123e892158" keyGenerationExpression="#['cacheKey']" objectStore="Object_store" />
+ 
+<!-- caching-templateFlow -->
+
+<flow name="caching-templateFlow" doc:id="0bcad20a-ea5e-4266-b1f4-d0f088795300" >
+  <http:listener doc:name="Listener" doc:id="8ed213dc-a13d-4067-b8e3-2d64fbfc40bd" config-ref="HttpsListenerConfig" path="/os"/>
+  <logger level="INFO" doc:name="INFO:Caching strategy" doc:id="ee091ea1-6a5c-4d0b-8475-6ce43ba53c65" message="#['Caching strategy']"/>
+  
+<!-- Cache scope refernecing strategy -->
+
+  <ee:cache doc:name="Cache" doc:id="ee272cb7-c21f-4dca-aa98-68500affa968" cachingStrategy-ref="Caching_Strategy">
+   <logger level="INFO" doc:name="lNFO:inside caching" doc:id="268b397e-bcc2-498d-a2e0-a330db1eaf9c" message="#['inside caching']"/>
+   <http:request method="GET" doc:name="Request-restcountries" doc:id="d0c8130f-f644-42a3-b49d-487e0b39c491" config-ref="HTTP_Request_configuration" url="#['https://restcountries.com/v3.1/all']"/>
+<!-- end of caching -->  
+</ee:cache>
+ 
+<logger level="INFO" doc:name="INFO: outside caching" doc:id="58a4db59-333e-4a10-8fe9-adfc0df58d42" message="#['outside caching scope- prepare response']"/>
+  
+<ee:transform doc:name="response-payload" doc:id="b3ce8d81-44dc-4ef9-85cf-c922216b5c1f" >
+   <ee:message >
+    <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+   </ee:message>
+  </ee:transform>
+ </flow>
+</mule>
